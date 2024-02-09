@@ -1,0 +1,431 @@
+basePath: /
+definitions:
+  handlers.Credentials:
+    properties:
+      identifier:
+        type: string
+      password:
+        type: string
+    required:
+    - identifier
+    - password
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  models.Application:
+    properties:
+      applicant:
+        $ref: '#/definitions/models.User'
+      applicantID:
+        type: integer
+      coverNote:
+        description: Optional field
+        type: string
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      id:
+        type: integer
+      job:
+        $ref: '#/definitions/models.Job'
+      jobID:
+        type: integer
+      resumeURL:
+        type: string
+      state:
+        $ref: '#/definitions/models.ApplicationState'
+      updatedAt:
+        type: string
+    type: object
+  models.ApplicationState:
+    enum:
+    - pending
+    - reviewed
+    - accepted
+    - rejected
+    - withdrawn
+    type: string
+    x-enum-varnames:
+    - Pending
+    - Reviewed
+    - Accepted
+    - Rejected
+    - Withdrawn
+  models.Job:
+    properties:
+      applications:
+        items:
+          $ref: '#/definitions/models.Application'
+        type: array
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      jd:
+        description: JD stands for Job Description
+        type: string
+      maximumApplications:
+        type: integer
+      postedBy:
+        $ref: '#/definitions/models.User'
+      postedByID:
+        type: integer
+      title:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  models.User:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      id:
+        type: integer
+      lastName:
+        type: string
+      password:
+        type: string
+      role:
+        $ref: '#/definitions/models.UserRole'
+      updatedAt:
+        type: string
+      uuid:
+        type: string
+    type: object
+  models.UserRole:
+    enum:
+    - admin
+    - company
+    - applicant
+    type: string
+    x-enum-varnames:
+    - Admin
+    - Company
+    - Applicant
+host: localhost:8080
+info:
+  contact: {}
+  description: API for managing job boards
+  title: Job Boards API
+  version: "1.0"
+paths:
+  /applications:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new job application
+      parameters:
+      - description: Application details
+        in: body
+        name: application
+        required: true
+        schema:
+          $ref: '#/definitions/models.Application'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Application created
+          schema:
+            $ref: '#/definitions/models.Application'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Failed to create application
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - jwt: []
+      summary: Apply for a job
+      tags:
+      - applications
+  /applications/{id}:
+    put:
+      consumes:
+      - application/json
+      description: Updates status of an application
+      parameters:
+      - description: Application ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: New status
+        in: body
+        name: status
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status updated
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Failed to update status
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - jwt: []
+      summary: Update application status
+      tags:
+      - applications
+  /jobs:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves paginated list of job postings
+      parameters:
+      - description: Results per page
+        in: query
+        name: limit
+        type: integer
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Filter by title
+        in: query
+        name: title
+        type: string
+      - description: Filter by description
+        in: query
+        name: description
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Job'
+            type: array
+        "400":
+          description: Invalid params
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Failed to get jobs
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: List all job postings
+      tags:
+      - jobs
+    post:
+      consumes:
+      - application/json
+      description: Creates a new job posting by saving to database
+      parameters:
+      - description: Job details
+        in: body
+        name: job
+        required: true
+        schema:
+          $ref: '#/definitions/models.Job'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Job created
+          schema:
+            $ref: '#/definitions/models.Job'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Failed to create job
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - jwt: []
+      summary: Create a new job posting
+      tags:
+      - jobs
+  /jobs/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a job posting by ID
+      parameters:
+      - description: Job ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Failed to delete job
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - jwt: []
+      summary: Delete a job posting
+      tags:
+      - jobs
+  /users/{id}/applications:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all job applications for the specified user ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Application'
+            type: array
+        "400":
+          description: Invalid ID
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Failed to retrieve applications
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - jwt: []
+      summary: List applications for a user
+      tags:
+      - applications
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Logs in a user by verifying credentials and returning a JWT token
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.Credentials'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login successful
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Invalid credentials
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Failed to generate token
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Log in a user
+      tags:
+      - users
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves details for the currently authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User details
+          schema:
+            $ref: '#/definitions/models.User'
+        "500":
+          description: Failed to get user
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - jwt: []
+      summary: Get user details
+      tags:
+      - users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new user by saving them to the database
+      parameters:
+      - description: User details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/models.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User created
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Failed to create user
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Register a new user
+      tags:
+      - users
+swagger: "2.0"

@@ -1,0 +1,11 @@
+database:
+  host: localhost
+  port: 5432
+  user: jobBoard_user
+  dbname: jobBoards
+  password: jobBoard_password
+  sslmode: disable
+
+jwt:
+  secret_key: "your-secret-key-for-development"
+
